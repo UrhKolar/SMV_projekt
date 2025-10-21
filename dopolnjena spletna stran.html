@@ -122,7 +122,8 @@
     { ime: 'Urh', priimek: 'Kolar', email: 'urh.kolar@dijak.sc-celje.si', funkcija: 'učitelj', spol: 'm' }
 ];
 
-function vlogaUporabnika(uporabnik) {
+function vlogaUporabnika(uporabnik)
+ {
     const { funkcija, spol } = uporabnik;
     if (funkcija === 'skrbnik') return 'skrbnik';
     if (funkcija === 'učitelj') return spol === 'ž' ? 'učiteljica' : 'učitelj';
@@ -138,7 +139,8 @@ function normalize(niz) {
         .trim();
 }
 
-function prijava() {
+function prijava()
+ {
     const imeVnos = document.getElementById('ime').value;
     const priimekVnos = document.getElementById('priimek').value;
 
