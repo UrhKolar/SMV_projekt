@@ -1,0 +1,372 @@
+<?php
+session_start();
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.php");
+    exit();
+}
+
+$user_role = $_SESSION['user_role'];
+$user_name = $_SESSION['user_name'];
+$user_type = $_SESSION['user_type'];
+
+// Only teachers and admins can access this page
+if ($user_role !== 'ucitelj' && $user_role !== 'uitelj' && $user_role !== 'skrbnik') {
+    header("Location: dashboard.php");
+    exit();
+}
+?>
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Redovalnica - eKonferenca</title>
+    <link rel="stylesheet" href="styles.css" />
+    <style>
+        body {
+            background: url('ozadje.jpeg') center/cover no-repeat fixed;
+            min-height: 100vh;
+        }
+        .role-badge {
+            background: #1a8f9b;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+        .role-badge.skrbnik { background: #d32f2f; }
+        .role-badge.ucitelj { background: #1976d2; }
+        .role-badge.ucenec { background: #388e3c; }
+        
+        .gradebook-form {
+            background: linear-gradient(135deg, #e8f4f8, #f0f8ff);
+            border: 2px solid #1a8f9b;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr auto;
+            gap: 15px;
+            align-items: end;
+        }
+        
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .form-group label {
+            font-weight: bold;
+            color: #1a8f9b;
+            margin-bottom: 5px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #1a8f9b;
+            box-shadow: 0 0 0 2px rgba(26, 143, 155, 0.2);
+        }
+        
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+        
+        .grades-table {
+            margin-top: 20px;
+        }
+        
+        .grade-cell {
+            text-align: center;
+            font-weight: bold;
+        }
+        
+        .grade-1 { color: #dc3545; }
+        .grade-2 { color: #fd7e14; }
+        .grade-3 { color: #ffc107; }
+        .grade-4 { color: #28a745; }
+        .grade-5 { color: #007bff; }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">eKonferenca - Redovalnica</div>
+        <nav class="nav">
+            <span id="user-info" style="margin-right:12px;color:#c9d1d9;">
+                <?php echo htmlspecialchars($user_name); ?>
+                <span class="role-badge <?php echo $user_role; ?>"><?php echo $user_role; ?></span>
+            </span>
+            <a href="dashboard.php">Dashboard</a>
+            <a href="predmeti.php">Predmeti</a>
+            <a href="ucitelji.php">Učitelji</a>
+            <a href="ucenci.php">Učenci</a>
+            <a href="gradiva.php">Gradiva</a>
+            <a href="naloge.php">Naloge</a>
+            <a href="poizvedbe.php">Poizvedbe</a>
+            <a href="redovalnica.php" class="active">📊 Redovalnica</a>
+            <a href="logout.php">Odjava</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="card">
+            <h2>📊 Redovalnica - Vnos ocen</h2>
+            <p style="color: #1976d2; font-weight: bold; margin-bottom: 1rem;">
+                🎓 Kot učitelj lahko vnašate ocene učencem za vse predmete z možnostjo določanja datuma
+            </p>
+            
+            <div class="gradebook-form">
+                <h3>Dodaj novo oceno</h3>
+                <form id="gradebook-form">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="student-select">Učenec:</label>
+                            <select id="student-select" required>
+                                <option value="">Izberite učenec</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="subject-select">Predmet:</label>
+                            <select id="subject-select" required>
+                                <option value="">Izberite predmet</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="grade-select">Ocena:</label>
+                            <select id="grade-select" required>
+                                <option value="">Ocena</option>
+                                <option value="1">1 - Nezadostno</option>
+                                <option value="2">2 - Zadostno</option>
+                                <option value="3">3 - Dobro</option>
+                                <option value="4">4 - Prav dobro</option>
+                                <option value="5">5 - Odlično</option>
+                            </select>
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="grade-date">Datum ocenjevanja:</label>
+                            <input type="date" id="grade-date" required>
+                        </div>
+                        
+                        <button type="submit" class="btn">Dodaj oceno</button>
+                    </div>
+                </form>
+                
+                <div id="success-message" class="success-message">
+                    ✅ Ocena uspešno dodana!
+                </div>
+                
+                <div id="error-message" class="error-message">
+                    ❌ Napaka pri dodajanju ocene!
+                </div>
+            </div>
+        </section>
+
+        <section class="card">
+            <h2>Pregled vseh ocen</h2>
+            <div id="grades-overview" class="grades-table"></div>
+        </section>
+
+        <section class="card">
+            <h2>Statistike ocen</h2>
+            <div id="grade-statistics"></div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        © eKonferenca
+    </footer>
+
+    <script src="app.js"></script>
+    <script>
+        const userRole = '<?php echo $user_role; ?>';
+        const userType = '<?php echo $user_type; ?>';
+        const userId = <?php echo $_SESSION['user_id']; ?>;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date as default
+            document.getElementById('grade-date').value = new Date().toISOString().split('T')[0];
+            
+            // Load form data
+            loadGradebookData();
+            
+            // Load grades overview
+            loadGradesOverview();
+            
+            // Load statistics
+            loadGradeStatistics();
+        });
+
+        function loadGradebookData() {
+            // Populate student dropdown
+            const studentSelect = document.getElementById('student-select');
+            Ucenec.forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.idUčenca;
+                option.textContent = student.Ime + ' ' + student.Priimek;
+                studentSelect.appendChild(option);
+            });
+
+            // Populate subject dropdown
+            const subjectSelect = document.getElementById('subject-select');
+            Predmet.forEach(subject => {
+                const option = document.createElement('option');
+                option.value = subject.idPredmeta;
+                option.textContent = subject.Ime_predmeta;
+                subjectSelect.appendChild(option);
+            });
+        }
+
+        // Grade form submission
+        document.getElementById('gradebook-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const studentId = document.getElementById('student-select').value;
+            const subjectId = document.getElementById('subject-select').value;
+            const grade = document.getElementById('grade-select').value;
+            const gradeDate = document.getElementById('grade-date').value;
+
+            if (studentId && subjectId && grade && gradeDate) {
+                // Get student and subject names for display
+                const student = Ucenec.find(s => s.idUčenca == studentId);
+                const subject = Predmet.find(p => p.idPredmeta == subjectId);
+                const teacher = Ucitelj.find(t => t.idUčitelja == userId);
+
+                // Add new grade to Naloga array
+                const newGrade = {
+                    idNaloge: Naloga.length + 1,
+                    Naslov: `Ocena za ${subject ? subject.Ime_predmeta : 'predmet'}`,
+                    Vsebina: `Ocena dodana s strani ${teacher ? teacher.Ime + ' ' + teacher.Priimek : 'učitelja'} dne ${gradeDate}`,
+                    Datum_oddaje: gradeDate,
+                    Ocena: parseInt(grade),
+                    idUčenca: parseInt(studentId),
+                    idUčitelja: userId,
+                    idPredmeta: parseInt(subjectId)
+                };
+
+                Naloga.push(newGrade);
+                
+                // Show success message
+                document.getElementById('success-message').style.display = 'block';
+                document.getElementById('error-message').style.display = 'none';
+                
+                // Clear form
+                document.getElementById('gradebook-form').reset();
+                document.getElementById('grade-date').value = new Date().toISOString().split('T')[0];
+                
+                // Refresh displays
+                loadGradesOverview();
+                loadGradeStatistics();
+                
+                // Hide success message after 3 seconds
+                setTimeout(() => {
+                    document.getElementById('success-message').style.display = 'none';
+                }, 3000);
+            } else {
+                document.getElementById('error-message').style.display = 'block';
+                document.getElementById('success-message').style.display = 'none';
+                
+                setTimeout(() => {
+                    document.getElementById('error-message').style.display = 'none';
+                }, 3000);
+            }
+        });
+
+        function loadGradesOverview() {
+            // Render grades table
+            renderTable(
+                "grades-overview",
+                [
+                    { header: "Učenec", accessor: function (row) {
+                        var u1 = najdiUcencePoId(row.idUčenca);
+                        return u1 ? (u1.Ime + " " + u1.Priimek) : row.idUčenca;
+                    } },
+                    { header: "Predmet", accessor: function (row) {
+                        var p = najdiPredmetPoId(row.idPredmeta);
+                        return p ? p.Ime_predmeta : row.idPredmeta;
+                    } },
+                    { header: "Naslov", accessor: "Naslov" },
+                    { header: "Datum", accessor: "Datum_oddaje" },
+                    { header: "Ocena", accessor: function (row) {
+                        const grade = row.Ocena;
+                        return `<span class="grade-cell grade-${grade}">${grade}</span>`;
+                    } },
+                    { header: "Učitelj", accessor: function (row) {
+                        var u2 = najdiUciteljaPoId(row.idUčitelja);
+                        return u2 ? (u2.Ime + " " + u2.Priimek) : row.idUčitelja;
+                    } }
+                ],
+                Naloga
+            );
+        }
+
+        function loadGradeStatistics() {
+            const statsDiv = document.getElementById('grade-statistics');
+            
+            // Calculate statistics
+            const totalGrades = Naloga.length;
+            const gradeCounts = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0};
+            let totalSum = 0;
+            
+            Naloga.forEach(grade => {
+                if (grade.Ocena) {
+                    gradeCounts[grade.Ocena]++;
+                    totalSum += grade.Ocena;
+                }
+            });
+            
+            const averageGrade = totalGrades > 0 ? (totalSum / totalGrades).toFixed(2) : 0;
+            
+            statsDiv.innerHTML = `
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                    <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; text-align: center;">
+                        <h4>Skupaj ocen</h4>
+                        <p style="font-size: 24px; font-weight: bold; color: #1a8f9b;">${totalGrades}</p>
+                    </div>
+                    <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; text-align: center;">
+                        <h4>Povprečna ocena</h4>
+                        <p style="font-size: 24px; font-weight: bold; color: #1a8f9b;">${averageGrade}</p>
+                    </div>
+                    <div style="background: #e8f4f8; padding: 15px; border-radius: 8px; text-align: center;">
+                        <h4>Ocene po stopnjah</h4>
+                        <p>1: ${gradeCounts[1]} | 2: ${gradeCounts[2]} | 3: ${gradeCounts[3]} | 4: ${gradeCounts[4]} | 5: ${gradeCounts[5]}</p>
+                    </div>
+                </div>
+            `;
+        }
+    </script>
+</body>
+</html>
+
+
+

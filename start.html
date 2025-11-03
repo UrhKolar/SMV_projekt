@@ -1,0 +1,81 @@
+﻿<!DOCTYPE html>
+<html lang="sl">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>eKonferenca – Prijava</title>
+<style>
+/* ozadje */
+/* ozadje */
+html, body { height:100%; }
+body {
+margin:0; padding:0; font-family: Arial, Helvetica, sans-serif; color:#0b2a33;
+background: url('ozadje.jpeg') center/cover no-repeat;
+background-attachment: fixed;
+}
+/* kartica */
+.wrapper { min-height:100%; display:flex; align-items:center; justify-content:center; padding:28px; }
+.card { width:95%; max-width:720px; background:#ffffff; border-radius:14px; box-shadow: 0 18px 40px rgba(0,0,0,.25); overflow:hidden; border:1px solid rgba(0,0,0,.06); }
+.card-top { height:220px; background: radial-gradient(120% 100% at 0% 0%, #2ac3a5 0%, #1a8f9b 50%, #136379 100%); position:relative; display:flex; align-items:center; justify-content:center; }
+.card-top h1 { color:#e9fffb; margin:0; font-size:34px; letter-spacing:.4px; text-shadow:0 2px 6px rgba(0,0,0,.25); }
+.card-body { padding:22px; background:#ffffff; }
+.title { text-align:center; color:#3d5964; font-weight:700; letter-spacing:.4px; margin:0 0 14px; }
+/* obrazec */
+.form { max-width:520px; margin:0 auto; }
+.field { display:flex; align-items:center; background:#1e5a66; border-radius:28px; padding:10px 14px; margin:10px 0; }
+.field input { flex:1; border:0; outline:0; background:transparent; color:#e7fbff; font-size:16px; }
+.field .icon { color:#c6eef4; margin-right:10px; }
+.hint { color:#6a7a80; font-size:13px; text-align:center; margin:6px 0 16px; }
+.row { display:flex; justify-content:space-between; align-items:center; color:#5a6f77; font-size:14px; margin:6px 0 14px; }
+.row a { color:#3a6e8a; text-decoration:none; }
+.row a:hover { text-decoration:underline; }
+.btn { display:block; width:140px; margin:10px auto 4px; border:0; background:#1f7ea0; color:#e9fffb; padding:10px 16px; border-radius:10px; font-weight:700; cursor:pointer; box-shadow:0 6px 14px rgba(0,0,0,.18); }
+.btn:hover { background:#2392b8; }
+.error { color:#b64848; font-size:13px; text-align:center; min-height:16px; }
+</style>
+</head>
+<body>
+<div class="wrapper">
+<div class="card">
+<div class="card-top">
+<h1>Dobrodošli v eKonferenco</h1>
+</div>
+<div class="card-body">
+<h2 class="title">Login:</h2>
+<p class="hint">Vnesi svoj Gmail in geslo, nato klikni Vpis.</p>
+<form class="form" onsubmit="return vstop();">
+<div class="field">
+<span class="icon">👤</span>
+<input id="mail" type="email" placeholder="Gmail (npr. ime@sola.si)" required />
+</div>
+<div class="field">
+<span class="icon">🔒</span>
+<input id="gmail" type="password" placeholder="Geslo:********" required />
+</div>
+<div class="row">
+<label><input id="remember" type="checkbox" /> Zapomni si me</label>
+<a href="#" onclick="alert('Demo: brez gesla.'); return false;">Pozabljeno geslo?</a>
+</div>
+<div id="err" class="error"></div>
+<button type="submit" class="btn">Vpis</button>
+</form>
+</div>
+</div>
+</div>
+
+<script>
+function jeGmail(naslov) { return /@gmail\.com$/i.test(naslov); }
+function vstop() {
+var mail = document.getElementById('mail').value.trim();
+var gmail = document.getElementById('gmail').value.trim();
+var err = document.getElementById('err');
+err.textContent = '';
+if (mail.length === 0 || gmail.length === 0) { err.textContent = 'Prosimo, izpolni oba polja.'; return false; }
+
+try { if (document.getElementById('remember').checked) { localStorage.setItem('ek_mail', mail); localStorage.setItem('ek_gmail', gmail); } } catch (e) {}
+window.location.href = 'index.html';
+return false;
+}
+</script>
+</body>
+</html>
