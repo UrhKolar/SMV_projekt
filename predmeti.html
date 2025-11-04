@@ -1,0 +1,303 @@
+<?php
+session_start();
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.html");
+    exit();
+}
+
+$user_role = $_SESSION['user_role'];
+$user_name = $_SESSION['user_name'];
+$user_type = $_SESSION['user_type'];
+?>
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Predmeti - eKonferenca</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: url('ozadje.jpeg') center/cover no-repeat fixed;
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: linear-gradient(135deg, #1a8f9b, #156a7a);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .nav a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .nav a.active {
+            background-color: rgba(255,255,255,0.2);
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .card h2 {
+            color: #1a8f9b;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #1a8f9b;
+            padding-bottom: 0.5rem;
+        }
+
+        .table {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #1a8f9b;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .role-badge {
+            background: #1a8f9b;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-left: 10px;
+        }
+
+        .role-badge.skrbnik { background: #d32f2f; }
+        .role-badge.ucitelj { background: #1976d2; }
+        .role-badge.ucenec { background: #388e3c; }
+
+        .footer {
+            background: #1a8f9b;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin-top: 2rem;
+        }
+
+        @media (max-width: 768px) {
+            .topbar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .nav {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .card {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">eKonferenca - Predmeti</div>
+        <nav class="nav">
+            <span id="user-info" style="margin-right:12px;color:#c9d1d9;">
+                <?php echo htmlspecialchars($user_name); ?>
+                <span class="role-badge <?php echo $user_role; ?>"><?php echo $user_role; ?></span>
+            </span>
+            <a href="index.html">Dashboard</a>
+            <a href="predmeti.html" class="active">Predmeti</a>
+            <?php if ($user_role === 'ucitelj' || $user_role === 'uitelj'): ?>
+            <a href="redovalnica.html">📊 Redovalnica</a>
+            <?php endif; ?>
+            <a href="logout.html">Odjava</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <section class="card">
+            <h2>Predmeti</h2>
+            <p>Pregled vseh predmetov v sistemu</p>
+            <div id="tbl-predmeti" class="table"></div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        © eKonferenca
+    </footer>
+
+    <script>
+        // Podatki
+        var Predmet = [
+            { idPredmeta: 1, Ime_predmeta: "Slovenščina" },
+            { idPredmeta: 2, Ime_predmeta: "VVO" },
+            { idPredmeta: 3, Ime_predmeta: "RPR" },
+            { idPredmeta: 4, Ime_predmeta: "Angleščina" },
+            { idPredmeta: 5, Ime_predmeta: "SMV" }
+        ];
+
+        var Ucitelj = [
+            { idUčitelja: 1, Ime: "Valentina", Priimek: "Hrastnik" },
+            { idUčitelja: 2, Ime: "Borut", Priimek: "Slemenšek" },
+            { idUčitelja: 3, Ime: "Rosana", Priimek: "Breznik" },
+            { idUčitelja: 4, Ime: "Jaka", Priimek: "Koren" },
+            { idUčitelja: 5, Ime: "Boštjan", Priimek: "Resinovič" },
+            { idUčitelja: 6, Ime: "Marija", Priimek: "Črepinšek" }
+        ];
+
+        var Ucitelj_Predmet = [
+            { idUčitelja: 1, idPredmeta: 1 },
+            { idUčitelja: 2, idPredmeta: 2 },
+            { idUčitelja: 2, idPredmeta: 3 },
+            { idUčitelja: 2, idPredmeta: 5 },
+            { idUčitelja: 3, idPredmeta: 4 },
+            { idUčitelja: 4, idPredmeta: 3 },
+            { idUčitelja: 5, idPredmeta: 5 },
+            { idUčitelja: 6, idPredmeta: 1 }
+        ];
+
+        function najdiUciteljaPoId(id) {
+            for (var i = 0; i < Ucitelj.length; i++) {
+                if (Ucitelj[i].idUčitelja === id) {
+                    return Ucitelj[i];
+                }
+            }
+            return null;
+        }
+
+        function najdiUciteljeZaPredmet(idPredmeta) {
+            var ucitelji = [];
+            for (var i = 0; i < Ucitelj_Predmet.length; i++) {
+                if (Ucitelj_Predmet[i].idPredmeta === idPredmeta) {
+                    var ucitelj = najdiUciteljaPoId(Ucitelj_Predmet[i].idUčitelja);
+                    if (ucitelj) {
+                        ucitelji.push(ucitelj);
+                    }
+                }
+            }
+            return ucitelji;
+        }
+
+        function renderTable(containerId, columns, rows) {
+            var container = document.getElementById(containerId);
+            var table = document.createElement("table");
+            var thead = document.createElement("thead");
+            var trHead = document.createElement("tr");
+            for (var i = 0; i < columns.length; i++) {
+                var th = document.createElement("th");
+                th.textContent = columns[i].header;
+                trHead.appendChild(th);
+            }
+            thead.appendChild(trHead);
+            var tbody = document.createElement("tbody");
+            for (var r = 0; r < rows.length; r++) {
+                var tr = document.createElement("tr");
+                for (var c = 0; c < columns.length; c++) {
+                    var td = document.createElement("td");
+                    var col = columns[c];
+                    if (typeof col.accessor === "function") {
+                        td.textContent = col.accessor(rows[r]);
+                    } else {
+                        td.textContent = rows[r][col.accessor] || "";
+                    }
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            container.innerHTML = "";
+            container.appendChild(table);
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            // Render predmeti table z učitelji
+            renderTable(
+                "tbl-predmeti",
+                [
+                    { header: "ID", accessor: "idPredmeta" },
+                    { header: "Ime predmeta", accessor: "Ime_predmeta" },
+                    { header: "Učitelj", accessor: function(row) {
+                        var ucitelji = najdiUciteljeZaPredmet(row.idPredmeta);
+                        if (ucitelji.length > 0) {
+                            return ucitelji.map(u => u.Ime + " " + u.Priimek).join(", ");
+                        }
+                        return "Ni dodeljenega učitelja";
+                    }}
+                ],
+                Predmet
+            );
+        });
+    </script>
+</body>
+</html>
+
+
+

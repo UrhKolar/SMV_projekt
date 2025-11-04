@@ -1,0 +1,690 @@
+<?php
+session_start();
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.html");
+    exit();
+}
+
+$user_role = $_SESSION['user_role'];
+$user_name = $_SESSION['user_name'];
+?>
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Učitelj - eKonferenca</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: linear-gradient(135deg, #1a8f9b, #156a7a);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+            cursor: pointer;
+        }
+
+        .nav a:hover, .nav a.active {
+            background-color: rgba(255,255,255,0.2);
+            font-weight: bold;
+        }
+
+        .nav a[href="logout.html"]:hover {
+            background-color: rgba(220, 53, 69, 0.3) !important;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+            display: none;
+        }
+
+        .card.active {
+            display: block;
+        }
+
+        .card h2 {
+            color: #1a8f9b;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #1a8f9b;
+            padding-bottom: 0.5rem;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 1rem;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            color: #1a8f9b;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #1a8f9b;
+            box-shadow: 0 0 0 2px rgba(26, 143, 155, 0.2);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #1a8f9b, #156a7a);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #156a7a, #1a8f9b);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .table {
+            overflow-x: auto;
+            margin-top: 1rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #1a8f9b;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .calendar-grid {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-top: 1rem;
+        }
+
+        .calendar-day {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            min-height: 80px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .calendar-day:hover {
+            background: #e8f4f8;
+            border-color: #1a8f9b;
+        }
+
+        .calendar-day.has-test {
+            background: #fff3cd;
+            border-color: #ffc107;
+        }
+
+        .calendar-day-header {
+            font-weight: bold;
+            color: #1a8f9b;
+            text-align: center;
+            padding: 10px;
+            background: #e8f4f8;
+        }
+
+        .test-item {
+            background: #ffc107;
+            color: #000;
+            padding: 5px;
+            border-radius: 3px;
+            margin-top: 5px;
+            font-size: 12px;
+        }
+
+        .test-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 2000;
+        }
+
+        .test-modal.active {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .test-modal-content {
+            background: white;
+            padding: 2rem;
+            border-radius: 10px;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        .close-btn {
+            float: right;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .close-btn:hover {
+            color: #000;
+        }
+
+        @media (max-width: 768px) {
+            .topbar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .nav {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <div class="brand">eKonferenca - Učitelj</div>
+        <nav class="nav">
+            <span style="margin-right:12px;color:#c9d1d9;">
+                <?php echo htmlspecialchars($user_name); ?>
+            </span>
+            <a href="#" class="nav-link active" data-section="konferenca">📊 Konferenca</a>
+            <a href="#" class="nav-link" data-section="koledar">📅 Koledar</a>
+            <a href="#" class="nav-link" data-section="ucitelji">👨‍🏫 Učitelji</a>
+            <a href="logout.html" class="nav-link" style="background-color: rgba(255,255,255,0.15);">🚪 Odjava</a>
+        </nav>
+    </header>
+
+    <main class="container">
+        <!-- Konferenca - Vnos ocen -->
+        <section id="konferenca" class="card active">
+            <h2>📊 Konferenca - Vnos ocen</h2>
+            <p style="color: #1976d2; font-weight: bold; margin-bottom: 1rem;">
+                Vnašajte ocene učencem za različne predmete
+            </p>
+            
+            <form id="grade-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="student-select">Učenec:</label>
+                        <select id="student-select" required>
+                            <option value="">Izberite učenec</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="subject-select">Predmet:</label>
+                        <select id="subject-select" required>
+                            <option value="">Izberite predmet</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="grade-select">Ocena:</label>
+                        <select id="grade-select" required>
+                            <option value="">Ocena</option>
+                            <option value="1">1 - Nezadostno</option>
+                            <option value="2">2 - Zadostno</option>
+                            <option value="3">3 - Dobro</option>
+                            <option value="4">4 - Prav dobro</option>
+                            <option value="5">5 - Odlično</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="grade-date">Datum ocenjevanja:</label>
+                        <input type="date" id="grade-date" required>
+                    </div>
+                </div>
+                
+                <button type="submit" class="btn" style="margin-top: 15px;">Dodaj oceno</button>
+            </form>
+            
+            <div id="grade-success" class="success-message">
+                ✅ Ocena uspešno dodana!
+            </div>
+
+            <div class="table" style="margin-top: 2rem;">
+                <h3>Pregled vseh ocen</h3>
+                <div id="grades-table"></div>
+            </div>
+        </section>
+
+        <!-- Koledar - Prihajajoči testi -->
+        <section id="koledar" class="card">
+            <h2>📅 Koledar - Prihajajoči testi</h2>
+            <p style="color: #1976d2; font-weight: bold; margin-bottom: 1rem;">
+                Dodajte in pregledujte prihajajoče teste
+            </p>
+            
+            <button class="btn" onclick="openTestModal()" style="margin-bottom: 1rem;">+ Dodaj nov test</button>
+            
+            <div class="calendar-grid">
+                <div class="calendar-day-header">Pon</div>
+                <div class="calendar-day-header">Tor</div>
+                <div class="calendar-day-header">Sre</div>
+                <div class="calendar-day-header">Čet</div>
+                <div class="calendar-day-header">Pet</div>
+                <div class="calendar-day-header">Sob</div>
+                <div class="calendar-day-header">Ned</div>
+                <div id="calendar-days"></div>
+            </div>
+        </section>
+
+        <!-- Učitelji po predmetih -->
+        <section id="ucitelji" class="card">
+            <h2>👨‍🏫 Učitelji po predmetih</h2>
+            <p style="color: #1976d2; font-weight: bold; margin-bottom: 1rem;">
+                Pregled učiteljev, ki poučujejo določene predmete
+            </p>
+            
+            <div class="form-group" style="margin-bottom: 1rem;">
+                <label for="filter-subject">Filtriraj po predmetu:</label>
+                <select id="filter-subject">
+                    <option value="">Vsi predmeti</option>
+                </select>
+            </div>
+            
+            <div id="teachers-table" class="table"></div>
+        </section>
+    </main>
+
+    <!-- Modal za dodajanje testa -->
+    <div id="test-modal" class="test-modal">
+        <div class="test-modal-content">
+            <span class="close-btn" onclick="closeTestModal()">&times;</span>
+            <h2>Dodaj nov test</h2>
+            <form id="test-form">
+                <div class="form-group">
+                    <label for="test-subject">Predmet:</label>
+                    <select id="test-subject" required>
+                        <option value="">Izberite predmet</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label for="test-title">Naslov testa:</label>
+                    <input type="text" id="test-title" required placeholder="npr. Preverjanje znanja 1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="test-date">Datum testa:</label>
+                    <input type="date" id="test-date" required>
+                </div>
+                
+                <button type="submit" class="btn">Dodaj test</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        // Podatki
+        var Predmet = [
+            { idPredmeta: 1, Ime_predmeta: "Slovenščina" },
+            { idPredmeta: 2, Ime_predmeta: "VVO" },
+            { idPredmeta: 3, Ime_predmeta: "RPR" },
+            { idPredmeta: 4, Ime_predmeta: "Angleščina" },
+            { idPredmeta: 5, Ime_predmeta: "SMV" }
+        ];
+
+        var Ucitelj = [
+            { idUčitelja: 1, Ime: "Valentina", Priimek: "Hrastnik" },
+            { idUčitelja: 2, Ime: "Borut", Priimek: "Slemenšek" },
+            { idUčitelja: 3, Ime: "Rosana", Priimek: "Breznik" },
+            { idUčitelja: 4, Ime: "Jaka", Priimek: "Koren" },
+            { idUčitelja: 5, Ime: "Boštjan", Priimek: "Resinovič" },
+            { idUčitelja: 6, Ime: "Marija", Priimek: "Črepinšek" }
+        ];
+
+        var Ucenec = [
+            { idUčenca: 1, Ime: "Ana", Priimek: "Kovač" },
+            { idUčenca: 2, Ime: "Miha", Priimek: "Novak" },
+            { idUčenca: 3, Ime: "Mojca", Priimek: "Podkrižnik" },
+            { idUčenca: 4, Ime: "Peter", Priimek: "Malik" },
+            { idUčenca: 5, Ime: "Rok", Priimek: "Urni" },
+            { idUčenca: 6, Ime: "Urh", Priimek: "Kolar" }
+        ];
+
+        var Ucitelj_Predmet = [
+            { idUčitelja: 1, idPredmeta: 1 },
+            { idUčitelja: 2, idPredmeta: 2 },
+            { idUčitelja: 2, idPredmeta: 3 },
+            { idUčitelja: 2, idPredmeta: 5 },
+            { idUčitelja: 3, idPredmeta: 4 },
+            { idUčitelja: 4, idPredmeta: 3 },
+            { idUčitelja: 5, idPredmeta: 5 },
+            { idUčitelja: 6, idPredmeta: 1 }
+        ];
+
+        var Naloga = [
+            { idNaloge: 1, Naslov: "Aktualizacija odnosa otroci-starši", Datum_oddaje: "2025-09-06", Ocena: 4, idUčenca: 1, idUčitelja: 1, idPredmeta: 1 },
+            { idNaloge: 2, Naslov: "Aktualizacija odnosa otroci-starši", Datum_oddaje: "2025-09-06", Ocena: 3, idUčenca: 2, idUčitelja: 1, idPredmeta: 1 },
+            { idNaloge: 6, Naslov: "Slovenščina - Naloga", Datum_oddaje: "2025-01-15", Ocena: 4, idUčenca: 6, idUčitelja: 6, idPredmeta: 1 }
+        ];
+
+        var Testi = [];
+
+        // Funkcije za navigacijo
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.addEventListener('click', function(e) {
+                e.preventDefault();
+                const section = this.getAttribute('data-section');
+                
+                // Odstrani active iz vseh
+                document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+                document.querySelectorAll('.card').forEach(c => c.classList.remove('active'));
+                
+                // Doda active izbranemu
+                this.classList.add('active');
+                document.getElementById(section).classList.add('active');
+            });
+        });
+
+        // Inicializacija
+        document.addEventListener('DOMContentLoaded', function() {
+            // Nastavi današnji datum
+            document.getElementById('grade-date').value = new Date().toISOString().split('T')[0];
+            
+            // Napolni dropdown menije
+            loadDropdowns();
+            
+            // Prikaži tabele
+            loadGradesTable();
+            loadTeachersTable();
+            loadCalendar();
+        });
+
+        function loadDropdowns() {
+            // Učenci
+            const studentSelect = document.getElementById('student-select');
+            Ucenec.forEach(student => {
+                const option = document.createElement('option');
+                option.value = student.idUčenca;
+                option.textContent = student.Ime + ' ' + student.Priimek;
+                studentSelect.appendChild(option);
+            });
+
+            // Predmeti
+            const subjectSelect = document.getElementById('subject-select');
+            const filterSubject = document.getElementById('filter-subject');
+            const testSubject = document.getElementById('test-subject');
+            
+            Predmet.forEach(subject => {
+                [subjectSelect, filterSubject, testSubject].forEach(select => {
+                    if (select) {
+                        const option = document.createElement('option');
+                        option.value = subject.idPredmeta;
+                        option.textContent = subject.Ime_predmeta;
+                        select.appendChild(option);
+                    }
+                });
+            });
+        }
+
+        // Vnos ocen
+        document.getElementById('grade-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const studentId = parseInt(document.getElementById('student-select').value);
+            const subjectId = parseInt(document.getElementById('subject-select').value);
+            const grade = parseInt(document.getElementById('grade-select').value);
+            const gradeDate = document.getElementById('grade-date').value;
+
+            const student = Ucenec.find(s => s.idUčenca === studentId);
+            const subject = Predmet.find(p => p.idPredmeta === subjectId);
+
+            const newGrade = {
+                idNaloge: Naloga.length + 1,
+                Naslov: `Ocena za ${subject.Ime_predmeta}`,
+                Datum_oddaje: gradeDate,
+                Ocena: grade,
+                idUčenca: studentId,
+                idUčitelja: 6, // Marija
+                idPredmeta: subjectId
+            };
+
+            Naloga.push(newGrade);
+            
+            document.getElementById('grade-success').style.display = 'block';
+            setTimeout(() => {
+                document.getElementById('grade-success').style.display = 'none';
+            }, 3000);
+            
+            this.reset();
+            document.getElementById('grade-date').value = new Date().toISOString().split('T')[0];
+            loadGradesTable();
+        });
+
+        function loadGradesTable() {
+            const container = document.getElementById('grades-table');
+            let html = '<table><thead><tr><th>Učenec</th><th>Predmet</th><th>Datum</th><th>Ocena</th></tr></thead><tbody>';
+            
+            Naloga.forEach(grade => {
+                const student = Ucenec.find(s => s.idUčenca === grade.idUčenca);
+                const subject = Predmet.find(p => p.idPredmeta === grade.idPredmeta);
+                html += `<tr>
+                    <td>${student ? student.Ime + ' ' + student.Priimek : ''}</td>
+                    <td>${subject ? subject.Ime_predmeta : ''}</td>
+                    <td>${grade.Datum_oddaje}</td>
+                    <td><strong>${grade.Ocena}</strong></td>
+                </tr>`;
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Koledar testov
+        function loadCalendar() {
+            const container = document.getElementById('calendar-days');
+            const today = new Date();
+            const currentMonth = today.getMonth();
+            const currentYear = today.getFullYear();
+            
+            const firstDay = new Date(currentYear, currentMonth, 1);
+            const lastDay = new Date(currentYear, currentMonth + 1, 0);
+            
+            const startDate = new Date(firstDay);
+            startDate.setDate(startDate.getDate() - startDate.getDay() + 1); // Ponedeljek
+            
+            let html = '';
+            for (let i = 0; i < 35; i++) {
+                const date = new Date(startDate);
+                date.setDate(startDate.getDate() + i);
+                
+                const dateStr = date.toISOString().split('T')[0];
+                const day = date.getDate();
+                const isCurrentMonth = date.getMonth() === currentMonth;
+                const hasTest = Testi.some(t => t.datum === dateStr);
+                
+                html += `<div class="calendar-day ${hasTest ? 'has-test' : ''} ${!isCurrentMonth ? 'opacity-50' : ''}" 
+                    onclick="${hasTest ? `showTestDetails('${dateStr}')` : `openTestModal('${dateStr}')`}">
+                    <strong>${day}</strong>`;
+                
+                if (hasTest) {
+                    const tests = Testi.filter(t => t.datum === dateStr);
+                    tests.forEach(test => {
+                        const subject = Predmet.find(p => p.idPredmeta === test.predmet);
+                        html += `<div class="test-item">${subject ? subject.Ime_predmeta : ''}: ${test.naslov}</div>`;
+                    });
+                }
+                
+                html += '</div>';
+            }
+            
+            container.innerHTML = html;
+        }
+
+        function openTestModal(dateStr) {
+            const modal = document.getElementById('test-modal');
+            const dateInput = document.getElementById('test-date');
+            
+            if (dateStr) {
+                dateInput.value = dateStr;
+            } else {
+                dateInput.value = new Date().toISOString().split('T')[0];
+            }
+            
+            modal.classList.add('active');
+        }
+
+        function closeTestModal() {
+            document.getElementById('test-modal').classList.remove('active');
+        }
+
+        document.getElementById('test-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const testDate = document.getElementById('test-date').value;
+            const testSubject = parseInt(document.getElementById('test-subject').value);
+            const testTitle = document.getElementById('test-title').value;
+            
+            Testi.push({
+                datum: testDate,
+                predmet: testSubject,
+                naslov: testTitle
+            });
+            
+            closeTestModal();
+            this.reset();
+            loadCalendar();
+        });
+
+        // Učitelji po predmetih
+        document.getElementById('filter-subject').addEventListener('change', function() {
+            loadTeachersTable(this.value);
+        });
+
+        function loadTeachersTable(filterSubjectId) {
+            const container = document.getElementById('teachers-table');
+            let html = '<table><thead><tr><th>Predmet</th><th>Učitelj</th></tr></thead><tbody>';
+            
+            let filteredData = Ucitelj_Predmet;
+            if (filterSubjectId) {
+                filteredData = filteredData.filter(up => up.idPredmeta === parseInt(filterSubjectId));
+            }
+            
+            filteredData.forEach(up => {
+                const subject = Predmet.find(p => p.idPredmeta === up.idPredmeta);
+                const teacher = Ucitelj.find(t => t.idUčitelja === up.idUčitelja);
+                
+                if (subject && teacher) {
+                    html += `<tr>
+                        <td>${subject.Ime_predmeta}</td>
+                        <td>${teacher.Ime} ${teacher.Priimek}</td>
+                    </tr>`;
+                }
+            });
+            
+            html += '</tbody></table>';
+            container.innerHTML = html;
+        }
+
+        // Zapri modal ko klikneš zunaj
+        window.onclick = function(event) {
+            const modal = document.getElementById('test-modal');
+            if (event.target === modal) {
+                closeTestModal();
+            }
+        }
+    </script>
+</body>
+</html>

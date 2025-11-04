@@ -1,0 +1,126 @@
+<?php
+// Test datoteka za preverjanje uporabnikov v bazi
+$servername = "localhost";
+$username = "root";
+$password = "";
+$dbname = "ekonferenca";
+
+try {
+    $conn = new PDO("mysql:host=$servername;dbname=$dbname;charset=utf8mb4", $username, $password);
+    $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch(PDOException $e) {
+    die("Connection failed: " . $e->getMessage());
+}
+?>
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+    <meta charset="utf-8" />
+    <title>Test uporabnikov - eKonferenca</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        table { border-collapse: collapse; width: 100%; margin: 20px 0; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background-color: #f2f2f2; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Test uporabnikov v bazi</h1>
+    
+    <h2>Učitelji:</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Ime</th>
+            <th>Priimek</th>
+            <th>Email</th>
+            <th>Funkcija</th>
+        </tr>
+        <?php
+        $stmt = $conn->prepare("SELECT * FROM Ucitelj");
+        $stmt->execute();
+        $ucitelji = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($ucitelji as $ucitelj) {
+            echo "<tr>";
+            echo "<td>" . $ucitelj['idUčitelja'] . "</td>";
+            echo "<td>" . $ucitelj['Ime'] . "</td>";
+            echo "<td>" . $ucitelj['Priimek'] . "</td>";
+            echo "<td>" . $ucitelj['Email'] . "</td>";
+            echo "<td>" . $ucitelj['Funkcija'] . "</td>";
+            echo "</tr>";
+        }
+        ?>
+    </table>
+    
+    <h2>Učenci:</h2>
+    <table>
+        <tr>
+            <th>ID</th>
+            <th>Ime</th>
+            <th>Priimek</th>
+            <th>Email</th>
+            <th>Funkcija</th>
+        </tr>
+        <?php
+        $stmt = $conn->prepare("SELECT * FROM Ucenec");
+        $stmt->execute();
+        $ucenci = $stmt->fetchAll(PDO::FETCH_ASSOC);
+        
+        foreach ($ucenci as $ucenec) {
+            echo "<tr>";
+            echo "<td>" . $ucenec['idUčenca'] . "</td>";
+            echo "<td>" . $ucenec['Ime'] . "</td>";
+            echo "<td>" . $ucenec['Priimek'] . "</td>";
+            echo "<td>" . $ucenec['Email'] . "</td>";
+            echo "<td>" . $ucenec['Funkcija'] . "</td>";
+            echo "</tr>";
+        }
+        ?>
+    </table>
+    
+    <h2>Preverjanje specifičnih uporabnikov:</h2>
+    
+    <?php
+    // Preveri Marijo
+    $stmt = $conn->prepare("SELECT * FROM Ucitelj WHERE Email = 'marija.crepinsek@dijak.sc-celje.si'");
+    $stmt->execute();
+    $marija = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($marija) {
+        echo "<p class='success'>✅ Marija najdena v tabeli Ucitelj: " . $marija['Ime'] . " " . $marija['Priimek'] . " - " . $marija['Funkcija'] . "</p>";
+    } else {
+        echo "<p class='error'>❌ Marija NI najdena v tabeli Ucitelj</p>";
+    }
+    
+    // Preveri Urha
+    $stmt = $conn->prepare("SELECT * FROM Ucenec WHERE Email = 'urh.kolar@dijak.sc-celje.si'");
+    $stmt->execute();
+    $urh = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($urh) {
+        echo "<p class='success'>✅ Urh najden v tabeli Ucenec: " . $urh['Ime'] . " " . $urh['Priimek'] . " - " . $urh['Funkcija'] . "</p>";
+    } else {
+        echo "<p class='error'>❌ Urh NI najden v tabeli Ucenec</p>";
+    }
+    
+    // Preveri, da Urh ni v tabeli Ucitelj
+    $stmt = $conn->prepare("SELECT * FROM Ucitelj WHERE Email = 'urh.kolar@dijak.sc-celje.si'");
+    $stmt->execute();
+    $urh_ucitelj = $stmt->fetch(PDO::FETCH_ASSOC);
+    
+    if ($urh_ucitelj) {
+        echo "<p class='error'>❌ PROBLEM: Urh je tudi v tabeli Ucitelj! To je vzrok problema.</p>";
+    } else {
+        echo "<p class='success'>✅ Urh ni v tabeli Ucitelj - to je pravilno</p>";
+    }
+    ?>
+    
+    <p><a href="login.html">Nazaj na prijavo</a></p>
+</body>
+</html>
+
+
+

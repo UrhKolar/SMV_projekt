@@ -1,0 +1,764 @@
+﻿<?php
+session_start();
+
+if (!isset($_SESSION['user_id'])) {
+    header("Location: login.html");
+    exit();
+}
+
+$user_role = $_SESSION['user_role'];
+$user_name = $_SESSION['user_name'];
+$user_type = $_SESSION['user_type'];
+?>
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>eKonferenca - Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            min-height: 100vh;
+        }
+
+        .topbar {
+            background: linear-gradient(135deg, #1a8f9b, #156a7a);
+            color: white;
+            padding: 1rem 2rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .brand {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .nav {
+            display: flex;
+            gap: 1.5rem;
+            align-items: center;
+        }
+
+        .nav a {
+            color: white;
+            text-decoration: none;
+            padding: 0.5rem 1rem;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+
+        .nav a:hover {
+            background-color: rgba(255,255,255,0.1);
+        }
+
+        .nav a.active {
+            background-color: rgba(255,255,255,0.2);
+            font-weight: bold;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+            border: 1px solid #e0e0e0;
+        }
+
+        .card h2 {
+            color: #1a8f9b;
+            margin-bottom: 1rem;
+            border-bottom: 2px solid #1a8f9b;
+            padding-bottom: 0.5rem;
+        }
+
+        .table {
+            overflow-x: auto;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background-color: #f8f9fa;
+            font-weight: 600;
+            color: #1a8f9b;
+        }
+
+        tr:hover {
+            background-color: #f5f5f5;
+        }
+
+        .role-badge {
+            background: #1a8f9b;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+            margin-left: 10px;
+        }
+
+        .role-badge.skrbnik { background: #d32f2f; }
+        .role-badge.ucitelj { background: #1976d2; }
+        .role-badge.ucenec { background: #388e3c; }
+
+        .btn {
+            background: linear-gradient(135deg, #1a8f9b, #156a7a);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1rem;
+            transition: all 0.3s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            background: linear-gradient(135deg, #156a7a, #1a8f9b);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+        }
+
+        .footer {
+            background: #1a8f9b;
+            color: white;
+            text-align: center;
+            padding: 1rem;
+            margin-top: 2rem;
+        }
+
+        .gradebook-form {
+            background: linear-gradient(135deg, #e8f4f8, #f0f8ff);
+            border: 2px solid #1a8f9b;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr 1fr auto;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: bold;
+            color: #1a8f9b;
+            margin-bottom: 5px;
+        }
+
+        .form-group input,
+        .form-group select {
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #1a8f9b;
+            box-shadow: 0 0 0 2px rgba(26, 143, 155, 0.2);
+        }
+
+        .success-message {
+            background: #d4edda;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .error-message {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            display: none;
+        }
+
+        .grade-cell {
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .grade-1 { color: #dc3545; }
+        .grade-2 { color: #fd7e14; }
+        .grade-3 { color: #ffc107; }
+        .grade-4 { color: #28a745; }
+        .grade-5 { color: #007bff; }
+
+        @media (max-width: 768px) {
+            .topbar {
+                flex-direction: column;
+                gap: 1rem;
+            }
+            
+            .nav {
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .container {
+                padding: 1rem;
+            }
+            
+            .card {
+                padding: 1rem;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+	<header class="topbar">
+		<div class="brand">eKonferenca</div>
+        <nav class="nav">
+            <span id="user-info" style="margin-right:12px;color:#c9d1d9;">
+                <?php echo htmlspecialchars($user_name); ?>
+                <span class="role-badge <?php echo $user_role; ?>"><?php echo $user_role; ?></span>
+            </span>
+            <a href="index.html" class="active">Dashboard</a>
+            <a href="predmeti.html">Predmeti</a>
+            <?php if ($user_role === 'ucitelj' || $user_role === 'uitelj'): ?>
+            <a href="redovalnica.html">📊 Redovalnica</a>
+            <?php endif; ?>
+            <a href="logout.html">Odjava</a>
+		</nav>
+	</header>
+
+	<main class="container">
+        <!-- Welcome message based on role -->
+        <section class="card">
+            <h2>Dobrodošli, <?php echo htmlspecialchars($user_name); ?>!</h2>
+            <p>Vaša vloga: <strong><?php echo ucfirst($user_role); ?></strong></p>
+
+            <?php if ($user_role === 'ucitelj' || $user_role === 'uitelj'): ?>
+                <p>Kot učitelj lahko vnašate ocene in upravljate gradiva.</p>
+            <?php elseif ($user_role === 'ucenec' || $user_role === 'uenec'): ?>
+                <p>Kot učenec lahko pregledujete svoje ocene in gradiva.</p>
+            <?php elseif ($user_role === 'skrbnik'): ?>
+                <p>Kot skrbnik imate dostop do vseh funkcionalnosti sistema.</p>
+            <?php endif; ?>
+        </section>
+
+        <!-- Grade input section ONLY for teachers -->
+        <?php if ($user_role === 'ucitelj' || $user_role === 'uitelj'): ?>
+        <section id="teacher-grade" class="card gradebook-form" style="display:none;">
+            <h2>📊 Vnos ocen - Samo za učitelje</h2>
+            <p style="color: #1976d2; font-weight: bold; margin-bottom: 1rem;">
+                🎓 Kot učitelj lahko vnašate ocene učencem za različne predmete
+            </p>
+            
+            <form id="gradebook-form">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label for="student-select">Učenec:</label>
+                        <select id="student-select" required>
+                            <option value="">Izberite učenec</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="subject-select">Predmet:</label>
+                        <select id="subject-select" required>
+                            <option value="">Izberite predmet</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="grade-select">Ocena:</label>
+                        <select id="grade-select" required>
+                            <option value="">Ocena</option>
+                            <option value="1">1 - Nezadostno</option>
+                            <option value="2">2 - Zadostno</option>
+                            <option value="3">3 - Dobro</option>
+                            <option value="4">4 - Prav dobro</option>
+                            <option value="5">5 - Odlično</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="grade-date">Datum ocenjevanja:</label>
+                        <input type="date" id="grade-date" required>
+                    </div>
+                    
+                    <button type="submit" class="btn">Dodaj oceno</button>
+                </div>
+            </form>
+            
+            <div id="success-message" class="success-message">
+                ✅ Ocena uspešno dodana!
+            </div>
+            
+            <div id="error-message" class="error-message">
+                ❌ Napaka pri dodajanju ocene!
+            </div>
+        </section>
+        <?php endif; ?>
+
+        <!-- Student grades view (read-only) -->
+        <?php if ($user_role === 'ucenec' || $user_role === 'uenec'): ?>
+        <section class="card">
+            <h2>👨‍🎓 Moje ocene</h2>
+            <p style="color: #388e3c; font-weight: bold; margin-bottom: 1rem;">
+                👨‍🎓 Kot učenec lahko samo pregledujete svoje ocene - vnos ocen ni dovoljen
+            </p>
+            <div id="student-grades" class="table"></div>
+        </section>
+        <?php endif; ?>
+
+        <!-- Regular content sections -->
+        <section class="card">
+			<h2>Predmeti</h2>
+			<div id="tbl-predmeti" class="table"></div>
+		</section>
+
+        <section class="card">
+			<h2>Učitelji</h2>
+			<div id="tbl-ucitelji" class="table"></div>
+		</section>
+
+        <section class="card">
+			<h2>Učenci</h2>
+			<div id="tbl-ucenci" class="table"></div>
+		</section>
+
+        <section class="card">
+			<h2>Gradiva</h2>
+			<div id="tbl-gradiva" class="table"></div>
+		</section>
+
+        <section class="card">
+			<h2>Naloge</h2>
+			<div id="tbl-naloge" class="table"></div>
+		</section>
+
+	</main>
+
+	<footer class="footer">
+		© eKonferenca
+	</footer>
+
+    <script>
+        // Podatki - preprosta JS koda - približno znanje 3. letnik
+        // prikaz tabel in nekaj poizvedb z osnovnimi zankami
+
+        var Predmet = [
+            { idPredmeta: 1, Ime_predmeta: "Slovenščina" },
+            { idPredmeta: 2, Ime_predmeta: "VVO" },
+            { idPredmeta: 3, Ime_predmeta: "RPR" },
+            { idPredmeta: 4, Ime_predmeta: "Angleščina" },
+            { idPredmeta: 5, Ime_predmeta: "SMV" }
+        ];
+
+        var Ucitelj = [
+            { idUčitelja: 1, Ime: "Valentina", Priimek: "Hrastnik" },
+            { idUčitelja: 2, Ime: "Borut", Priimek: "Slemenšek" },
+            { idUčitelja: 3, Ime: "Rosana", Priimek: "Breznik" },
+            { idUčitelja: 4, Ime: "Jaka", Priimek: "Koren" },
+            { idUčitelja: 5, Ime: "Boštjan", Priimek: "Resinovič" },
+            { idUčitelja: 6, Ime: "Marija", Priimek: "Črepinšek" }
+        ];
+
+        var Ucenec = [
+            { idUčenca: 1, Ime: "Ana", Priimek: "Kovač" },
+            { idUčenca: 2, Ime: "Miha", Priimek: "Novak" },
+            { idUčenca: 3, Ime: "Mojca", Priimek: "Podkrižnik" },
+            { idUčenca: 4, Ime: "Peter", Priimek: "Malik" },
+            { idUčenca: 5, Ime: "Rok", Priimek: "Urni" },
+            { idUčenca: 6, Ime: "Urh", Priimek: "Kolar" }
+        ];
+
+        var Ucitelj_Predmet = [
+            { idUčitelja: 1, idPredmeta: 1 },
+            { idUčitelja: 2, idPredmeta: 2 },
+            { idUčitelja: 2, idPredmeta: 3 },
+            { idUčitelja: 2, idPredmeta: 5 },
+            { idUčitelja: 3, idPredmeta: 4 },
+            { idUčitelja: 4, idPredmeta: 3 },
+            { idUčitelja: 5, idPredmeta: 5 }
+        ];
+
+        var Ucenec_Predmet = [
+            { idUčenca: 1, idPredmeta: 1 },
+            { idUčenca: 1, idPredmeta: 5 },
+            { idUčenca: 2, idPredmeta: 1 },
+            { idUčenca: 2, idPredmeta: 2 },
+            { idUčenca: 2, idPredmeta: 3 },
+            { idUčenca: 3, idPredmeta: 1 },
+            { idUčenca: 3, idPredmeta: 4 },
+            { idUčenca: 4, idPredmeta: 1 },
+            { idUčenca: 4, idPredmeta: 3 },
+            { idUčenca: 4, idPredmeta: 5 },
+            { idUčenca: 5, idPredmeta: 1 },
+            { idUčenca: 5, idPredmeta: 3 },
+            { idUčenca: 5, idPredmeta: 5 }
+        ];
+
+        var Gradivo = [
+            { idGradiva: 1, Naslov: "Moderna na Slovenskem", Vsebina: "Wordov dokument s predstavniki in deli", Datum_nalaganja: "2025-04-25", idUčitelja: 1, idPredmeta: 1 },
+            { idGradiva: 2, Naslov: "IP naslovi", Vsebina: "PPT datoteka o verzijah IP naslovov", Datum_nalaganja: "2024-09-01", idUčitelja: 2, idPredmeta: 2 },
+            { idGradiva: 3, Naslov: "Irregular verbs", Vsebina: "Wordov dokument z nepravilnimi glagoli", Datum_nalaganja: "2020-12-12", idUčitelja: 3, idPredmeta: 3 },
+            { idGradiva: 4, Naslov: "Obdelava zvoka", Vsebina: "PPT datoteka z opisom orodja Adobe Audition", Datum_nalaganja: "2024-09-12", idUčitelja: 4, idPredmeta: 4 },
+            { idGradiva: 5, Naslov: "Predstavitev WindowsForms", Vsebina: "Videoposnetek z razlago snovi", Datum_nalaganja: "2021-02-05", idUčitelja: 5, idPredmeta: 5 }
+        ];
+
+        var Naloga = [
+            { idNaloge: 1, Naslov: "Aktualizacija odnosa otroci-starši", Vsebina: "Primerjava današnjih odnosov ...", Datum_oddaje: "2025-09-06", Ocena: 4, idUčenca: 1, idUčitelja: 1, idPredmeta: 1 },
+            { idNaloge: 2, Naslov: "Aktualizacija odnosa otroci-starši", Vsebina: "Primerjava današnjih odnosov ...", Datum_oddaje: "2025-09-06", Ocena: 3, idUčenca: 2, idUčitelja: 1, idPredmeta: 1 },
+            { idNaloge: 3, Naslov: "Aktualizacija odnosa otroci-starši", Vsebina: "Primerjava današnjih odnosov ...", Datum_oddaje: "2025-09-05", Ocena: 5, idUčenca: 3, idUčitelja: 1, idPredmeta: 1 },
+            { idNaloge: 4, Naslov: "Aktualizacija odnosa otroci-starši", Vsebina: "Primerjava današnjih odnosov ...", Datum_oddaje: "2025-09-05", Ocena: 4, idUčenca: 4, idUčitelja: 1, idPredmeta: 1 },
+            { idNaloge: 5, Naslov: "Aktualizacija odnosa otroci-starši", Vsebina: "Primerjava današnjih odnosov ...", Datum_oddaje: "2025-09-06", Ocena: 3, idUčenca: 5, idUčitelja: 1, idPredmeta: 1 },
+            { idNaloge: 6, Naslov: "Slovenščina - Naloga", Vsebina: "Ocena dodana s strani Marija Črepinšek dne 2025-01-15", Datum_oddaje: "2025-01-15", Ocena: 4, idUčenca: 6, idUčitelja: 6, idPredmeta: 1 }
+        ];
+
+        // pomožne funkcije (preproste)
+        function najdiPredmetPoId(id) {
+            for (var i = 0; i < Predmet.length; i++) {
+                if (Predmet[i].idPredmeta === id) {
+                    return Predmet[i];
+                }
+            }
+            return null;
+        }
+
+        function najdiUciteljaPoId(id) {
+            for (var i = 0; i < Ucitelj.length; i++) {
+                if (Ucitelj[i].idUčitelja === id) {
+                    return Ucitelj[i];
+                }
+            }
+            return null;
+        }
+
+        function najdiUcencePoId(id) {
+            for (var i = 0; i < Ucenec.length; i++) {
+                if (Ucenec[i].idUčenca === id) {
+                    return Ucenec[i];
+                }
+            }
+            return null;
+        }
+
+        function renderTable(containerId, columns, rows) {
+            var container = document.getElementById(containerId);
+            var table = document.createElement("table");
+            var thead = document.createElement("thead");
+            var trHead = document.createElement("tr");
+            for (var i = 0; i < columns.length; i++) {
+                var th = document.createElement("th");
+                th.textContent = columns[i].header;
+                trHead.appendChild(th);
+            }
+            thead.appendChild(trHead);
+            var tbody = document.createElement("tbody");
+            for (var r = 0; r < rows.length; r++) {
+                var tr = document.createElement("tr");
+                for (var c = 0; c < columns.length; c++) {
+                    var td = document.createElement("td");
+                    var col = columns[c];
+                    if (typeof col.accessor === "function") {
+                        td.innerHTML = col.accessor(rows[r]);
+                    } else {
+                        td.textContent = rows[r][col.accessor] || "";
+                    }
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+            table.appendChild(thead);
+            table.appendChild(tbody);
+            container.innerHTML = "";
+            container.appendChild(table);
+        }
+
+        // Role-based functionality
+        const userRole = '<?php echo $user_role; ?>';
+        const userType = '<?php echo $user_type; ?>';
+        const userId = <?php echo $_SESSION['user_id']; ?>;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            // Set today's date as default
+            if (document.getElementById('grade-date')) {
+                document.getElementById('grade-date').value = new Date().toISOString().split('T')[0];
+            }
+            
+            // Load grade form data for teachers
+            if (userRole === 'ucitelj' || userRole === 'uitelj') {
+                var tg = document.getElementById('teacher-grade');
+                if (tg) { tg.style.display = 'block'; }
+                loadGradeFormData();
+            }
+
+            // Show student grades for ucenec
+            if (userRole === 'ucenec' || userRole === 'uenec') {
+                loadStudentGrades();
+            }
+
+            // Initialize all tables
+            init();
+        });
+
+        function loadGradeFormData() {
+            // Populate student dropdown
+            const studentSelect = document.getElementById('student-select');
+            if (studentSelect) {
+                Ucenec.forEach(student => {
+                    const option = document.createElement('option');
+                    option.value = student.idUčenca;
+                    option.textContent = student.Ime + ' ' + student.Priimek;
+                    studentSelect.appendChild(option);
+                });
+            }
+
+            // Populate subject dropdown
+            const subjectSelect = document.getElementById('subject-select');
+            if (subjectSelect) {
+                Predmet.forEach(subject => {
+                    const option = document.createElement('option');
+                    option.value = subject.idPredmeta;
+                    option.textContent = subject.Ime_predmeta;
+                    subjectSelect.appendChild(option);
+                });
+            }
+        }
+
+        function loadStudentGrades() {
+            // Filter grades for current student
+            const studentGrades = Naloga.filter(grade => grade.idUčenca == userId);
+            
+            if (studentGrades.length === 0) {
+                document.getElementById('student-grades').innerHTML = 
+                    '<p style="text-align: center; color: #666; padding: 2rem;">Še nimate nobenih ocen.</p>';
+                return;
+            }
+
+            // Render student grades table
+            renderTable(
+                "student-grades",
+                [
+                    { header: "Predmet", accessor: function (row) {
+                        var p = najdiPredmetPoId(row.idPredmeta);
+                        return p ? p.Ime_predmeta : row.idPredmeta;
+                    } },
+                    { header: "Naslov naloge", accessor: "Naslov" },
+                    { header: "Datum oddaje", accessor: "Datum_oddaje" },
+                    { header: "Ocena", accessor: function (row) {
+                        const grade = row.Ocena;
+                        let gradeClass = '';
+                        if (grade >= 4) gradeClass = 'color: green; font-weight: bold;';
+                        else if (grade >= 3) gradeClass = 'color: orange; font-weight: bold;';
+                        else gradeClass = 'color: red; font-weight: bold;';
+                        return `<span style="${gradeClass}">${grade}</span>`;
+                    } },
+                    { header: "Učitelj", accessor: function (row) {
+                        var u = najdiUciteljaPoId(row.idUčitelja);
+                        return u ? (u.Ime + " " + u.Priimek) : row.idUčitelja;
+                    } }
+                ],
+                studentGrades
+            );
+
+            // Calculate average grade
+            const totalGrades = studentGrades.reduce((sum, grade) => sum + (grade.Ocena || 0), 0);
+            const averageGrade = totalGrades / studentGrades.length;
+            
+            // Add average grade display
+            const avgDiv = document.createElement('div');
+            avgDiv.style.cssText = 'margin-top: 1rem; padding: 1rem; background: #e8f4f8; border-radius: 8px; text-align: center;';
+            avgDiv.innerHTML = `<strong>Povprečna ocena: <span style="color: #1a8f9b; font-size: 1.2em;">${averageGrade.toFixed(2)}</span></strong>`;
+            document.getElementById('student-grades').appendChild(avgDiv);
+        }
+
+        // Grade form submission
+        const gradeForm = document.getElementById('gradebook-form');
+        if (gradeForm) {
+            gradeForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const studentId = document.getElementById('student-select').value;
+                const subjectId = document.getElementById('subject-select').value;
+                const grade = document.getElementById('grade-select').value;
+                const gradeDate = document.getElementById('grade-date').value;
+
+                if (studentId && subjectId && grade && gradeDate) {
+                    // Get student and subject names for display
+                    const student = Ucenec.find(s => s.idUčenca == studentId);
+                    const subject = Predmet.find(p => p.idPredmeta == subjectId);
+                    const teacher = Ucitelj.find(t => t.idUčitelja == userId);
+
+                    // Add new grade to Naloga array
+                    const newGrade = {
+                        idNaloge: Naloga.length + 1,
+                        Naslov: `Ocena za ${subject ? subject.Ime_predmeta : 'predmet'}`,
+                        Vsebina: `Ocena dodana s strani ${teacher ? teacher.Ime + ' ' + teacher.Priimek : 'učitelja'} dne ${gradeDate}`,
+                        Datum_oddaje: gradeDate,
+                        Ocena: parseInt(grade),
+                        idUčenca: parseInt(studentId),
+                        idUčitelja: userId,
+                        idPredmeta: parseInt(subjectId)
+                    };
+
+                    Naloga.push(newGrade);
+                    
+                    // Show success message
+                    document.getElementById('success-message').style.display = 'block';
+                    document.getElementById('error-message').style.display = 'none';
+                    
+                    // Clear form
+                    document.getElementById('gradebook-form').reset();
+                    document.getElementById('grade-date').value = new Date().toISOString().split('T')[0];
+                    
+                    // Refresh displays
+                    init();
+                    if (userRole === 'ucenec' || userRole === 'uenec') {
+                        loadStudentGrades();
+                    }
+                    
+                    // Hide success message after 3 seconds
+                    setTimeout(() => {
+                        document.getElementById('success-message').style.display = 'none';
+                    }, 3000);
+                } else {
+                    document.getElementById('error-message').style.display = 'block';
+                    document.getElementById('success-message').style.display = 'none';
+                    
+                    setTimeout(() => {
+                        document.getElementById('error-message').style.display = 'none';
+                    }, 3000);
+                }
+            });
+        }
+
+        function init() {
+            // osnovne tabele
+            renderTable(
+                "tbl-predmeti",
+                [
+                    { header: "ID", accessor: "idPredmeta" },
+                    { header: "Ime predmeta", accessor: "Ime_predmeta" }
+                ],
+                Predmet
+            );
+
+            renderTable(
+                "tbl-ucitelji",
+                [
+                    { header: "ID", accessor: "idUčitelja" },
+                    { header: "Ime", accessor: "Ime" },
+                    { header: "Priimek", accessor: "Priimek" }
+                ],
+                Ucitelj
+            );
+
+            renderTable(
+                "tbl-ucenci",
+                [
+                    { header: "ID", accessor: "idUčenca" },
+                    { header: "Ime", accessor: "Ime" },
+                    { header: "Priimek", accessor: "Priimek" }
+                ],
+                Ucenec
+            );
+
+            // gradiva z imeni učiteljev in predmeta
+            renderTable(
+                "tbl-gradiva",
+                [
+                    { header: "Naslov", accessor: "Naslov" },
+                    { header: "Vsebina", accessor: "Vsebina" },
+                    { header: "Datum nalaganja", accessor: "Datum_nalaganja" },
+                    { header: "Učitelj", accessor: function (row) {
+                        var u = najdiUciteljaPoId(row.idUčitelja);
+                        if (u) {
+                            return u.Ime + " " + u.Priimek;
+                        }
+                        return row.idUčitelja;
+                    } },
+                    { header: "Predmet", accessor: function (row) {
+                        var p = najdiPredmetPoId(row.idPredmeta);
+                        if (p) {
+                            return p.Ime_predmeta;
+                        }
+                        return row.idPredmeta;
+                    } }
+                ],
+                Gradivo
+            );
+
+            // naloge z imeni
+            renderTable(
+                "tbl-naloge",
+                [
+                    { header: "Naslov", accessor: "Naslov" },
+                    { header: "Datum oddaje", accessor: "Datum_oddaje" },
+                    { header: "Ocena", accessor: "Ocena" },
+                    { header: "Učenec", accessor: function (row) {
+                        var u1 = najdiUcencePoId(row.idUčenca);
+                        return u1 ? (u1.Ime + " " + u1.Priimek) : row.idUčenca;
+                    } },
+                    { header: "Učitelj", accessor: function (row) {
+                        var u2 = najdiUciteljaPoId(row.idUčitelja);
+                        return u2 ? (u2.Ime + " " + u2.Priimek) : row.idUčitelja;
+                    } },
+                    { header: "Predmet", accessor: function (row) {
+                        var p2 = najdiPredmetPoId(row.idPredmeta);
+                        return p2 ? p2.Ime_predmeta : row.idPredmeta;
+                    } }
+                ],
+                Naloga
+            );
+
+            // Poizvedbe so skrite na glavni strani
+        }
+    </script>
+</body>
+</html>

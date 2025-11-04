@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="sl">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>eKonferenca</title>
+	<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+	<header class="topbar">
+		<div class="brand">eKonferenca</div>
+		<nav class="nav"><span id="user-info" style="margin-right:12px;color:#c9d1d9;"></span>
+			<a href="#predmeti">Predmeti</a>
+			<a href="#ucitelji">Učitelji</a>
+			<a href="#ucenci">Učenci</a>
+			<a href="#gradiva">Gradiva</a>
+			<a href="#naloge">Naloge</a>
+			<a href="#poizvedbe">Poizvedbe</a>
+		</nav>
+	</header>
+
+	<main class="container">
+		<section id="predmeti" class="card">
+			<h2>Predmeti</h2>
+			<div id="tbl-predmeti" class="table"></div>
+		</section>
+
+		<section id="ucitelji" class="card">
+			<h2>Učitelji</h2>
+			<div id="tbl-ucitelji" class="table"></div>
+		</section>
+
+		<section id="ucenci" class="card">
+			<h2>Učenci</h2>
+			<div id="tbl-ucenci" class="table"></div>
+		</section>
+
+		<section id="gradiva" class="card">
+			<h2>Gradiva</h2>
+			<div id="tbl-gradiva" class="table"></div>
+		</section>
+
+		<section id="naloge" class="card">
+			<h2>Naloge</h2>
+			<div id="tbl-naloge" class="table"></div>
+		</section>
+
+		<section id="poizvedbe" class="card">
+			<h2>Poizvedbe (primeri)</h2>
+
+			<div class="query">
+				<h3>Gradiva za slovenščino (idPredmeta = 1)</h3>
+				<div id="q-gradiva-slo" class="table"></div>
+			</div>
+
+			<div class="query">
+				<h3>Prof. Valentina Hrastnik – naloge za slovenščino (idUčitelja=1, idPredmeta=1)</h3>
+				<div id="q-naloge-valentina" class="table"></div>
+			</div>
+
+			<div class="query">
+				<h3>Ocene dijakinje Ane Kovač (idUčenca=1)</h3>
+				<div id="q-ocene-ana" class="table"></div>
+			</div>
+
+			<div class="query">
+				<h3>Predmeti, ki jih poučuje učitelj z id=2</h3>
+				<div id="q-predmeti-ucitelj-2" class="table"></div>
+			</div>
+
+			<div class="query">
+				<h3>Učenci, ki obiskujejo predmet z id=5</h3>
+				<div id="q-ucenci-predmet-5" class="table"></div>
+			</div>
+
+			<div class="query">
+				<h3>Povprečna ocena nalog, ki jih je ocenil učitelj z id=1</h3>
+				<div id="q-povprecna-ocena" class="metric"></div>
+			</div>
+		</section>
+	</main>
+
+	<footer class="footer">
+		© eKonferenca
+	</footer>
+
+	<script src="podatki_predmeta.js"></script>
+</body>
+</html>
